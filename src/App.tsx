@@ -5,7 +5,7 @@ import { z } from "zod";
 
 interface Option {
   id: number;
-  name_ar: string;
+  [key: string]: string | number;
 }
 
 const options: Option[] = [
@@ -52,8 +52,7 @@ const App = () => {
               placeholder="ادخل كلمة للبحث..."
               value={value} 
               onChange={onChange}
-              
-             
+              displayValue="name_ar"
             />
             {error && (
               <p className="text-red-500 text-xs mt-1">{error.message}</p>
