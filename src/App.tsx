@@ -1,30 +1,73 @@
+import { useForm, Controller } from "react-hook-form";
 import MultiSelect from "./components/MultiSelect";
-const options = [
-  { id: 1, name_ar: "دليل" }, // Tutorial
-  { id: 2, name_ar: "كيفية" }, // HowTo
-  { id: 3, name_ar: "افعلها بنفسك" }, // DIY
-  { id: 4, name_ar: "مراجعة" }, // Review
-  { id: 5, name_ar: "تكنولوجيا" }, // Tech
-  { id: 6, name_ar: "ألعاب" }, // Gaming
-  { id: 7, name_ar: "سفر" }, // Travel
-  { id: 8, name_ar: "لياقة بدنية" }, // Fitness
-  { id: 9, name_ar: "طبخ" }, // Cooking
-  { id: 10, name_ar: "مدونة فيديو" }, // Vlog
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+interface Option {
+  id: number;
+  name_ar: string;
+}
+
+const options: Option[] = [
+  { id: 1, name_ar: "خيار 1" },
+  { id: 2, name_ar: "خيار 2" },
+  { id: 3, name_ar: "خيار 3" },
 ];
 
+const schema = z.object({
+  items: z
+    .string()
+    .nonempty("الرجاء اختيار خيار واحد على الاقل") 
+    .refine(
+      (value) => value.split(",").filter((id) => id).length > 0,
+      "الرجاء اختيار خيار واحد على الاقل"
+    ),
+});
+
+type FormValues = z.infer<typeof schema>;
 
 const App = () => {
+  const {
+    control,
+    handleSubmit,
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { items: "1" },
+  });
+
+  const onSubmit = (data: FormValues) => {
+    console.log("Submitted Data:", data);
+  };
+
   return (
-    <div className="container mx-auto">
-      <div className="flex w-full items-center justify-center">
-        <form className="flex w-[600px] flex-col items-start justify-center shadow-md p-2">
-          <MultiSelect options={options} title=" الفصول" placeholder="اختر الفصول"/>
-          <label className="my-2 font-bold" htmlFor="subject">المادة</label>
-          <input name="subject" type="text" className="w-full border rounded-md p-1.5 focus:outline-none"/>
-          <button className="bg-blue-500 rounded-md py-1 px-4 my-2 text-white">حفظ</button>
-        </form>
-      </div>
-    </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <Controller
+        name="items"
+        control={control}
+        render={({ field: { value, onChange }, fieldState: { error } }) => (
+          <div>
+            <MultiSelect
+              options={options}
+              title="الفصول"
+              placeholder="ادخل كلمة للبحث..."
+              value={value} 
+              onChange={onChange}
+              
+             
+            />
+            {error && (
+              <p className="text-red-500 text-xs mt-1">{error.message}</p>
+            )}
+          </div>
+        )}
+      />
+      <button
+        type="submit"
+        className="rounded bg-blue-500 px-4 py-2 text-white"
+      >
+        Submit
+      </button>
+    </form>
   );
 };
 

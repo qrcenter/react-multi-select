@@ -1,36 +1,64 @@
 import { ChevronDown, CircleX, X } from "lucide-react";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+
 interface Option {
   id: number;
   name_ar: string;
 }
+
 interface MultiSelectProps {
   options: Option[];
   title: string;
   placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+  multiple?: boolean;
 }
+
 const MultiSelect: React.FC<MultiSelectProps> = ({
   options,
   title,
   placeholder,
+  value,
+  onChange,
+  multiple = false,
 }) => {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Option[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const selectedIds = value.split(",").map(Number).filter(Boolean);
+    const selectedOptions = options.filter((option) =>
+      selectedIds.includes(option.id),
+    );
+    setSelected(selectedOptions);
+  }, [value, options]);
+
   const filteredOptions = options.filter(
     (item) =>
       item.name_ar.includes(query.trim()) &&
       !selected.some((selectedItem) => selectedItem.id === item.id),
   );
-  const handleSelectItem = (item: { id: number; name_ar: string }) => {
-    setSelected((prev) => [...prev, item]);
-    setQuery("");
+
+  const handleSelectItem = (item: Option) => {
+    if (multiple) {
+      const updatedSelected = [...selected, item];
+      setSelected(updatedSelected);
+      setQuery("");
+      onChange(updatedSelected.map((opt) => opt.id).join(","));
+    } else {
+      setSelected([item]);
+      onChange(item.id.toString());
+    }
   };
 
   const handleRemoveItem = (id: number) => {
-    setSelected(selected.filter((item) => item.id !== id));
+    const updatedSelected = selected.filter((item) => item.id !== id);
+    setSelected(updatedSelected);
+    onChange(updatedSelected.map((opt) => opt.id).join(","));
   };
 
   return (
@@ -43,23 +71,25 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
         onBlur={() => setIsOpen(false)}
       >
         <div className="flex flex-wrap gap-1">
-          {selected.map((item) => (
-            <div
-              key={item.id}
-              className="flex w-fit items-center gap-1 rounded-full border border-gray-400 bg-gray-50 p-1 text-gray-500"
-            >
-              {item.name_ar}
-
-              <X
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => handleRemoveItem(item.id)}
-                size={12}
-                className="cursor-pointer text-gray-400"
-              />
-            </div>
-          ))}
+          {selected.map((item) =>
+            multiple ? (
+              <div
+                key={item.id}
+                className="flex w-fit items-center gap-1 rounded-full border border-gray-400 bg-gray-50 p-1 text-gray-500"
+              >
+                {item.name_ar}
+                <X
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleRemoveItem(item.id)}
+                  size={12}
+                  className="cursor-pointer text-gray-400"
+                />
+              </div>
+            ) : (
+              <div> {item.name_ar}</div>
+            ),
+          )}
           <input
-            key="searchOfSelect"
             ref={inputRef}
             type="text"
             value={query}
@@ -73,6 +103,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             <CircleX
               onClick={() => {
                 setSelected([]);
+                onChange(""); // Clear the selection
                 inputRef.current?.focus();
               }}
               className="mx-2 cursor-pointer text-gray-500"
@@ -86,20 +117,12 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             }`}
           />
         </div>
-
-        <input
-          key="valueOfSelect"
-          type="text"
-          value={selected.map((item) => item.id).join(",")}
-          onChange={() => {}}
-          className="hidden"
-        />
       </div>
       {isOpen && (
         <div className="absolute flex max-h-52 w-full overflow-y-auto rounded-md bg-white shadow-md">
           <ul className="w-full">
             {filteredOptions?.length ? (
-              filteredOptions.map((item, index: number) => (
+              filteredOptions.map((item, index) => (
                 <li
                   key={index}
                   className="w-full cursor-pointer rounded-md p-2 hover:bg-teal-50 hover:text-teal-500"
