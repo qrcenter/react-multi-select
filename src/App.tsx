@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Selectors from "./components/Selectors";
 import type { Option } from "./lib/types";
 
