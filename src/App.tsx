@@ -1,72 +1,57 @@
-import { useForm, Controller } from "react-hook-form";
-import MultiSelect from "./components/MultiSelect";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-
-interface Option {
-  id: number;
-  [key: string]: string | number;
-}
+import { useState } from "react";
+import Selectors from "./components/Selectors";
+import type { Option } from "./lib/types";
 
 const options: Option[] = [
-  { id: 1, name_ar: "خيار 1" },
-  { id: 2, name_ar: "خيار 2" },
-  { id: 3, name_ar: "خيار 3" },
+  { id: 1, name: "Tom Cook" },
+  { id: 2, name: "Wade Cooper" },
+  { id: 3, name: "Tanya Fox" },
+  { id: 4, name: "Arlene Mccoy" },
+  { id: 5, name: "Devon Webb" },
 ];
-
-const schema = z.object({
-  items: z
-    .string()
-    .nonempty("الرجاء اختيار خيار واحد على الاقل") 
-    .refine(
-      (value) => value.split(",").filter((id) => id).length > 0,
-      "الرجاء اختيار خيار واحد على الاقل"
-    ),
-});
-
-type FormValues = z.infer<typeof schema>;
+const selectedSingleIds = [2];
+const selectedMultiIds = [2,3];
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  const formData = new FormData(e.target as HTMLFormElement);
+  const ids: number[] = [];
+  formData.forEach((value, key) => {
+    if (key.match(/^chapters\[\d+\]\[id\]$/)) {
+      ids.push(Number(value));
+    }
+  });
+const selectedId=formData.get("subject[id]")
+  console.log("Submitted subject:", selectedId);
+  console.log("Submitted IDs:", ids);
+  console.log("Submitted Data:", Object.fromEntries(formData.entries()));
+};
 
 const App = () => {
-  const {
-    control,
-    handleSubmit,
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { items: "1" },
-  });
-
-  const onSubmit = (data: FormValues) => {
-    console.log("Submitted Data:", data);
-  };
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <Controller
-        name="items"
-        control={control}
-        render={({ field: { value, onChange }, fieldState: { error } }) => (
-          <div>
-            <MultiSelect
-              options={options}
-              title="الفصول"
-              placeholder="ادخل كلمة للبحث..."
-              value={value} 
-              onChange={onChange}
-              displayValue="name_ar"
-            />
-            {error && (
-              <p className="text-red-500 text-xs mt-1">{error.message}</p>
-            )}
-          </div>
-        )}
-      />
-      <button
-        type="submit"
-        className="rounded bg-blue-500 px-4 py-2 text-white"
-      >
-        Submit
-      </button>
-    </form>
+    <div className="mx-auto h-screen w-96 pt-2 bg-black">
+      <form onSubmit={handleSubmit}>
+        {/* multiple */}
+        <Selectors
+          options={options}
+          title="Chapters"
+          name="chapters"
+          multiple
+          defaultValue={selectedMultiIds
+            .map((id) => options.find((option) => option.id === id))
+            .filter((option): option is Option => option !== undefined)}
+        />
+        {/* single */}
+        <Selectors
+          options={options}
+          title="Subject"
+          name="subject"
+          defaultValue={options.find((option) => option.id === selectedSingleIds[0])}
+        />
+        <button type="submit" className="bg-blue-500 text-white py-1 px-2 mt-2">
+          Save
+        </button>
+      </form>
+      </div>
   );
 };
 
